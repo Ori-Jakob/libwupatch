@@ -111,7 +111,7 @@ bool GuardSite(SiteRecord& s, const Config& cfg, const char* owner)
         refuse(s, 0, cfg.dataDelta, owner, "is not word-aligned");
         return false;
     }
-    if (!OSIsAddressValid(s.runtimeAddr)) {
+    if (!cfg.assumeMapped && !OSIsAddressValid(s.runtimeAddr)) {
         refuse(s, 0, cfg.dataDelta, owner, "is not mapped");
         return false;
     }

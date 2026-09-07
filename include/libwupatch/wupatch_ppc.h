@@ -27,6 +27,9 @@ uint32_t Blr();
 uint32_t Nop();
 uint32_t Lfs(unsigned frt, unsigned ra, int16_t disp);
 uint32_t Lwz(unsigned rt, unsigned ra, int16_t disp);
+uint32_t Stw(unsigned rs, unsigned ra, int16_t disp);
+uint32_t Stwu(unsigned rs, unsigned ra, int16_t disp);
+uint32_t Addi(unsigned rt, unsigned ra, int16_t imm);
 
 // False when either address is unaligned or the distance exceeds +-32 MB.
 bool EncodeBranch(uint32_t from, uint32_t to, bool link, uint32_t* out);

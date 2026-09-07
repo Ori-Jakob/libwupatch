@@ -82,7 +82,9 @@ static bool apply(SwapRecord& r, const Config& cfg)
 {
     r.runtimeAddr = r.desc.linkAddr + cfg.dataDelta;
     const uint32_t bytes = (uint32_t)r.desc.count * r.desc.stride;
-    if (!OSIsAddressValid(r.runtimeAddr) || !OSIsAddressValid(r.runtimeAddr + bytes - 1u)) {
+    if (!cfg.assumeMapped &&
+        (!OSIsAddressValid(r.runtimeAddr) ||
+         !OSIsAddressValid(r.runtimeAddr + bytes - 1u))) {
         Log::Warn("%s: %08X..%08X is not mapped", r.desc.owner,
                   (unsigned)r.runtimeAddr, (unsigned)(r.runtimeAddr + bytes));
         return false;

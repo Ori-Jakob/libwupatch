@@ -29,6 +29,13 @@ struct Config {
 
     Backend  backend;
     bool     allowDirectWrite;       // defaults false
+
+    // Skip the OSIsAddressValid guard. For a text site that guard is already
+    // redundant - the site was proved to sit inside the module's own text - and
+    // an emulator that does not implement the call refuses every patch on it.
+    // Data swaps have no such proof, so only set this where the host knows the
+    // addresses are sound.
+    bool     assumeMapped;
     WriteFn  writeFn;                // optional; direct backend only
 
     // Works around the patcher crashing on unnamed modules, but drops its title gate.

@@ -73,6 +73,24 @@ uint32_t Lwz(unsigned rt, unsigned ra, int16_t disp)
            ((uint32_t)disp & 0xFFFFu);
 }
 
+uint32_t Stw(unsigned rs, unsigned ra, int16_t disp)
+{
+    return 0x90000000u | ((rs & 31u) << 21) | ((ra & 31u) << 16) |
+           ((uint32_t)disp & 0xFFFFu);
+}
+
+uint32_t Stwu(unsigned rs, unsigned ra, int16_t disp)
+{
+    return 0x94000000u | ((rs & 31u) << 21) | ((ra & 31u) << 16) |
+           ((uint32_t)disp & 0xFFFFu);
+}
+
+uint32_t Addi(unsigned rt, unsigned ra, int16_t imm)
+{
+    return 0x38000000u | ((rt & 31u) << 21) | ((ra & 31u) << 16) |
+           ((uint32_t)imm & 0xFFFFu);
+}
+
 bool EncodeBranch(uint32_t from, uint32_t to, bool link, uint32_t* out)
 {
     if (!out || ((from | to) & 3u))

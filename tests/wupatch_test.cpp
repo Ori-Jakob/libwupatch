@@ -134,32 +134,46 @@ static void testShims()
     chkWord("  bctr",               out[6], 0x4E800420u);
 
     const uint32_t replacement = 0xC3EC5638u;
-    chk("rewrite shim is 5 words", Shim::BuildRewrite(out, ret, replacement) == Shim::kRewriteWords);
-    chkWord("  lis r11, hi(ret)",   out[0], 0x3D600E73u);
-    chkWord("  ori r11, lo(ret)",   out[1], 0x616BAA28u);
-    chkWord("  mtctr r11",          out[2], 0x7D6903A6u);
-    chkWord("  <replacement>",      out[3], replacement);
-    chkWord("  bctr",               out[4], 0x4E800420u);
+    chk("rewrite shim is 9 words", Shim::BuildRewrite(out, ret, replacement) == Shim::kRewriteWords);
+    chkWord("  stwu r1, -16(r1)",   out[0], 0x9421FFF0u);
+    chkWord("  stw r11, 8(r1)",     out[1], 0x91610008u);
+    chkWord("  lis r11, hi(ret)",   out[2], 0x3D600E73u);
+    chkWord("  ori r11, lo(ret)",   out[3], 0x616BAA28u);
+    chkWord("  mtctr r11",          out[4], 0x7D6903A6u);
+    chkWord("  lwz r11, 8(r1)",     out[5], 0x81610008u);
+    chkWord("  addi r1, r1, 16",    out[6], 0x38210010u);
+    chkWord("  <replacement>",      out[7], replacement);
+    chkWord("  bctr",               out[8], 0x4E800420u);
 
     // The pointer's low half has bit 15 set, like the hook above.
     const uint32_t ptr = 0x80D7C03Cu;
-    chk("indirect shim is 5 words", Shim::BuildIndirect(out, ptr) == Shim::kIndirectWords);
-    chkWord("  lis r11, hi(ptr)",   out[0], 0x3D6080D7u);
-    chkWord("  ori r11, lo(ptr)",   out[1], 0x616BC03Cu);
-    chkWord("  lwz r11, 0(r11)",    out[2], 0x816B0000u);
-    chkWord("  mtctr r11",          out[3], 0x7D6903A6u);
-    chkWord("  bctr",               out[4], 0x4E800420u);
+    chk("indirect shim is 9 words", Shim::BuildIndirect(out, ptr) == Shim::kIndirectWords);
+    chkWord("  stwu r1, -16(r1)",   out[0], 0x9421FFF0u);
+    chkWord("  stw r11, 8(r1)",     out[1], 0x91610008u);
+    chkWord("  lis r11, hi(ptr)",   out[2], 0x3D6080D7u);
+    chkWord("  ori r11, lo(ptr)",   out[3], 0x616BC03Cu);
+    chkWord("  lwz r11, 0(r11)",    out[4], 0x816B0000u);
+    chkWord("  mtctr r11",          out[5], 0x7D6903A6u);
+    chkWord("  lwz r11, 8(r1)",     out[6], 0x81610008u);
+    chkWord("  addi r1, r1, 16",    out[7], 0x38210010u);
+    chkWord("  bctr",               out[8], 0x4E800420u);
+
+    // The stubs hand r11 back; only CTR is spent. This is what keeps a caller
+    // that parked a value in r11 across the call working after it is patched.
+    chk("indirect shim restores r11 before branching",
+        out[1] == Ppc::Stw(11, 1, 8) && out[6] == Ppc::Lwz(11, 1, 8) &&
+        out[7] == Ppc::Addi(1, 1, 16) && out[8] == Ppc::Bctr());
 
     chk("all fit a slot", Shim::kCallWords <= Shim::kSlotWords &&
                           Shim::kRewriteWords <= Shim::kSlotWords &&
                           Shim::kIndirectWords <= Shim::kSlotWords);
     chk("site slot: entry and thunk on different cache lines",
-        Shim::kSiteEntryOffset + Shim::kIndirectWords <= 8 &&
-        Shim::kSiteThunkOffset >= 8 &&
+        Shim::kSiteEntryOffset + Shim::kIndirectWords <= Shim::kSiteThunkOffset &&
+        (Shim::kSiteThunkOffset % 8) == 0 &&
         Shim::kSiteThunkOffset + Shim::kRewriteWords <= Shim::kSlotWords);
     chk("link slot: next and call on different cache lines",
-        Shim::kLinkNextOffset + Shim::kIndirectWords <= 8 &&
-        Shim::kLinkCallOffset >= 8 &&
+        Shim::kLinkNextOffset + Shim::kIndirectWords <= Shim::kLinkCallOffset &&
+        (Shim::kLinkCallOffset % 8) == 0 &&
         Shim::kLinkCallOffset + Shim::kCallWords <= Shim::kSlotWords);
 }
 
